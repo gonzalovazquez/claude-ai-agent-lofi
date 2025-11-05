@@ -19,8 +19,10 @@ from rich.live import Live
 from rich.text import Text
 from rich import box
 
-from src.audio_input import AudioFileReader
+from src.audio_input import AudioFileReader, MicrophoneInput
 from src.visualizer import WaveformVisualizer
+import time
+import signal
 
 
 console = Console()
@@ -96,6 +98,167 @@ def visualize_audio_file(file_path: str, mode: str = "waveform"):
         sys.exit(1)
 
 
+def list_audio_devices():
+    """List all available audio input devices."""
+    try:
+        with MicrophoneInput() as mic:
+            devices = mic.list_devices()
+
+            if not devices:
+                console.print("[yellow]No audio input devices found.[/yellow]")
+                return
+
+            console.print("\n[cyan]Available Audio Input Devices:[/cyan]\n")
+            for device in devices:
+                console.print(f"  [{device['index']}] {device['name']}")
+                console.print(f"      Channels: {device['channels']}, Sample Rate: {device['sample_rate']} Hz")
+
+    except Exception as e:
+        console.print(f"[red]Error listing devices: {e}[/red]")
+        sys.exit(1)
+
+
+def visualize_microphone_live(mode: str = "waveform", device_index: int = None, refresh_rate: float = 0.05):
+    """
+    Visualize microphone input in real-time.
+
+    Args:
+        mode: Visualization mode (waveform, spectrum, oscilloscope)
+        device_index: Index of the audio input device (None for default)
+        refresh_rate: Display refresh rate in seconds
+    """
+    # Flag to handle graceful shutdown
+    running = True
+
+    def signal_handler(sig, frame):
+        nonlocal running
+        running = False
+
+    signal.signal(signal.SIGINT, signal_handler)
+
+    try:
+        # Initialize microphone
+        console.print(f"[cyan]Starting microphone input...[/cyan]")
+        mic = MicrophoneInput(sample_rate=44100, chunk_size=2048, buffer_size=30)
+
+        # Start the audio stream
+        mic.start_stream(device_index=device_index)
+        console.print(f"[green]Microphone active! Speak to see visualization.[/green]")
+        console.print(f"[dim]Press Ctrl+C to stop[/dim]\n")
+
+        # Initialize visualizer
+        terminal_width = console.width - 4
+        visualizer = WaveformVisualizer(width=terminal_width, height=20)
+
+        # Set title based on mode
+        if mode == "waveform":
+            title = "🎙️  Live Waveform"
+        elif mode == "spectrum":
+            title = "🎙️  Live Spectrum"
+        elif mode == "oscilloscope":
+            title = "🎙️  Live Oscilloscope"
+        else:
+            title = "🎙️  Live Audio"
+
+        # Start live display
+        with Live(console=console, refresh_per_second=int(1/refresh_rate)) as live:
+            while running:
+                try:
+                    # Get audio data from buffer
+                    audio_data = mic.get_buffer()
+
+                    if len(audio_data) == 0:
+                        # No audio yet, show waiting message
+                        layout = Layout()
+                        layout.split_column(
+                            Layout(Panel(
+                                "[dim]Waiting for audio input...[/dim]\n" * 10,
+                                title=title,
+                                border_style="yellow",
+                                box=box.ROUNDED,
+                            )),
+                            Layout(Panel(
+                                "[dim]Peak: 0.0000  |  RMS: 0.0000[/dim]",
+                                title="📊 Audio Levels",
+                                border_style="blue",
+                                box=box.ROUNDED,
+                            ), size=3),
+                        )
+                        live.update(layout)
+                        time.sleep(refresh_rate)
+                        continue
+
+                    # Normalize audio
+                    audio_data = visualizer.normalize_audio(audio_data)
+
+                    # Generate visualization
+                    if mode == "waveform":
+                        viz_lines = visualizer.create_waveform(audio_data)
+                    elif mode == "spectrum":
+                        viz_lines = visualizer.create_spectrum_bars(audio_data, num_bars=terminal_width - 4)
+                    elif mode == "oscilloscope":
+                        viz_lines = visualizer.create_oscilloscope(audio_data)
+                    else:
+                        viz_lines = ["[red]Unknown mode[/red]"]
+
+                    viz_text = "\n".join(viz_lines)
+
+                    # Get audio levels
+                    peak, rms = mic.get_levels()
+
+                    # Create VU meter
+                    peak_bars = int(peak * 40)
+                    rms_bars = int(rms * 40)
+
+                    peak_meter = "█" * peak_bars + "░" * (40 - peak_bars)
+                    rms_meter = "█" * rms_bars + "░" * (40 - rms_bars)
+
+                    # Determine color based on levels
+                    peak_color = "red" if peak > 0.9 else "yellow" if peak > 0.7 else "green"
+                    rms_color = "red" if rms > 0.9 else "yellow" if rms > 0.7 else "green"
+
+                    levels_text = (
+                        f"[{peak_color}]Peak: {peak:.4f}[/{peak_color}]  [{peak_color}]{peak_meter}[/{peak_color}]\n"
+                        f"[{rms_color}]RMS:  {rms:.4f}[/{rms_color}]  [{rms_color}]{rms_meter}[/{rms_color}]"
+                    )
+
+                    # Create layout with visualization and levels
+                    layout = Layout()
+                    layout.split_column(
+                        Layout(Panel(
+                            viz_text,
+                            title=title,
+                            border_style="green",
+                            box=box.ROUNDED,
+                        )),
+                        Layout(Panel(
+                            levels_text,
+                            title="📊 Audio Levels",
+                            border_style="blue",
+                            box=box.ROUNDED,
+                        ), size=5),
+                    )
+
+                    live.update(layout)
+                    time.sleep(refresh_rate)
+
+                except KeyboardInterrupt:
+                    break
+                except Exception as e:
+                    console.print(f"[red]Error during visualization: {e}[/red]")
+                    break
+
+        # Cleanup
+        mic.stop_stream()
+        mic.close()
+        console.print("\n[cyan]Microphone stopped.[/cyan]")
+
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        console.print("[yellow]Tip: Make sure you have a microphone connected and permissions are granted.[/yellow]")
+        sys.exit(1)
+
+
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
@@ -109,19 +272,29 @@ Examples:
   # Visualize as spectrum analyzer
   python main.py file.wav --mode spectrum
 
-  # Visualize as oscilloscope
-  python main.py file.wav --mode oscilloscope
+  # Live microphone visualization (Stage 2)
+  python main.py --live
+
+  # Live microphone with spectrum mode
+  python main.py --live --mode spectrum
+
+  # List available audio input devices
+  python main.py --list-devices
+
+  # Use specific audio device
+  python main.py --live --device 1
 
 Stages:
-  Stage 1 (Current): Sound file visualization
-  Stage 2 (Planned): Real-time voice wave from microphone
-  Stage 3 (Planned): Voice-to-text + Claude AI assistant
+  Stage 1: Sound file visualization ✅
+  Stage 2: Real-time voice wave from microphone ✅
+  Stage 3: Voice-to-text + Claude AI assistant (Planned)
         """,
     )
 
     parser.add_argument(
         "audio_file",
-        help="Path to the audio file to visualize",
+        nargs="?",
+        help="Path to the audio file to visualize (not needed for --live mode)",
     )
 
     parser.add_argument(
@@ -133,9 +306,37 @@ Stages:
     )
 
     parser.add_argument(
+        "--live",
+        "-l",
+        action="store_true",
+        help="Live microphone visualization (Stage 2)",
+    )
+
+    parser.add_argument(
+        "--list-devices",
+        action="store_true",
+        help="List available audio input devices",
+    )
+
+    parser.add_argument(
+        "--device",
+        "-d",
+        type=int,
+        help="Audio input device index (use --list-devices to see available devices)",
+    )
+
+    parser.add_argument(
+        "--refresh-rate",
+        "-r",
+        type=float,
+        default=0.05,
+        help="Display refresh rate in seconds (default: 0.05)",
+    )
+
+    parser.add_argument(
         "--version",
         action="version",
-        version="Claude AI Agent LoFi v0.1.0 (Stage 1)",
+        version="Claude AI Agent LoFi v0.2.0 (Stage 2)",
     )
 
     args = parser.parse_args()
@@ -150,8 +351,16 @@ Stages:
     )
     console.print()
 
-    # Visualize the audio file
-    visualize_audio_file(args.audio_file, args.mode)
+    # Handle different modes
+    if args.list_devices:
+        list_audio_devices()
+    elif args.live:
+        visualize_microphone_live(args.mode, args.device, args.refresh_rate)
+    elif args.audio_file:
+        visualize_audio_file(args.audio_file, args.mode)
+    else:
+        parser.print_help()
+        console.print("\n[yellow]Error: Please provide an audio file or use --live mode[/yellow]")
 
 
 if __name__ == "__main__":

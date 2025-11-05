@@ -4,16 +4,19 @@ A lofi Claude AI agent that runs on command line - visualize audio, interact wit
 
 ## 🌟 Project Stages
 
-### ✅ Stage 1: CLI Sound File Visualizer (Current)
+### ✅ Stage 1: CLI Sound File Visualizer
 Visualize audio files in your terminal with multiple visualization modes:
 - **Waveform View**: See the amplitude over time
 - **Spectrum Analyzer**: Frequency spectrum visualization
 - **Oscilloscope View**: Detailed waveform with grid overlay
 
-### 🚧 Stage 2: Real-Time Voice Visualization (Planned)
+### ✅ Stage 2: Real-Time Voice Visualization (Current)
 - Capture audio from microphone in real-time
 - Live voice wave visualization as you speak
-- Interactive audio monitoring
+- Interactive audio level monitoring with VU meters
+- Multiple visualization modes (waveform, spectrum, oscilloscope)
+- Device selection and configuration
+- Peak and RMS level indicators with color coding
 
 ### 🚧 Stage 3: AI Personal Assistant (Planned)
 - Speech-to-text using OpenAI Whisper
@@ -57,6 +60,21 @@ Visualize audio files in your terminal with multiple visualization modes:
    python main.py samples/sample_tone.wav --mode oscilloscope
    ```
 
+5. **Try live microphone visualization (Stage 2)**
+   ```bash
+   # List available audio input devices
+   python main.py --list-devices
+
+   # Live microphone visualization
+   python main.py --live
+
+   # Live with spectrum analyzer
+   python main.py --live --mode spectrum
+
+   # Use specific audio device
+   python main.py --live --device 1
+   ```
+
 ### Docker Usage
 
 1. **Build the Docker image**
@@ -85,23 +103,62 @@ Visualize audio files in your terminal with multiple visualization modes:
    # With different modes
    docker-compose run --rm lofi-agent /audio/sample_tone.wav --mode spectrum
    docker-compose run --rm lofi-agent /audio/sample_tone.wav --mode oscilloscope
+
+   # Stage 2: Live microphone (requires audio device access)
+   docker-compose run --rm lofi-agent --live
+   docker-compose run --rm lofi-agent --live --mode spectrum
    ```
 
 ## 📖 Usage Examples
 
-### Basic Visualization
+### Stage 1: File Visualization
+
+#### Basic Visualization
 ```bash
 python main.py my_audio.wav
 ```
 
-### Spectrum Analyzer Mode
+#### Spectrum Analyzer Mode
 ```bash
 python main.py my_audio.wav --mode spectrum
 ```
 
-### Oscilloscope Mode
+#### Oscilloscope Mode
 ```bash
 python main.py my_audio.wav --mode oscilloscope
+```
+
+### Stage 2: Live Microphone
+
+#### List Available Devices
+```bash
+python main.py --list-devices
+```
+
+#### Live Waveform
+```bash
+python main.py --live
+```
+
+#### Live Spectrum Analyzer
+```bash
+python main.py --live --mode spectrum
+```
+
+#### Live Oscilloscope
+```bash
+python main.py --live --mode oscilloscope
+```
+
+#### Use Specific Device
+```bash
+python main.py --live --device 1
+```
+
+#### Adjust Refresh Rate
+```bash
+python main.py --live --refresh-rate 0.1  # Slower refresh
+python main.py --live --refresh-rate 0.02  # Faster refresh
 ```
 
 ### Help
@@ -149,13 +206,16 @@ claude-ai-agent-lofi/
 
 ## 📋 Requirements
 
-### Stage 1 (Current)
+### Stages 1 & 2 (Current)
 - numpy>=1.24.0
 - soundfile>=0.12.0
 - rich>=13.7.0
-
-### Stage 2 (Planned)
 - pyaudio>=0.2.13
+
+### System Dependencies (for Stage 2)
+- portaudio19-dev (Linux)
+- PortAudio (macOS: `brew install portaudio`)
+- PyAudio wheels (Windows)
 
 ### Stage 3 (Planned)
 - openai-whisper>=20231117
@@ -168,10 +228,14 @@ claude-ai-agent-lofi/
 # Generate sample audio for testing
 python generate_sample.py
 
-# Test all visualization modes
+# Test Stage 1: File visualization modes
 python main.py samples/sample_tone.wav --mode waveform
 python main.py samples/sample_tone.wav --mode spectrum
 python main.py samples/sample_tone.wav --mode oscilloscope
+
+# Test Stage 2: Live microphone
+python main.py --list-devices  # List available devices
+python main.py --live  # Start live visualization
 ```
 
 ### Contributing
@@ -184,10 +248,13 @@ Contributions are welcome! This project is in active development.
   - [x] Spectrum analyzer
   - [x] Oscilloscope view
   - [x] Docker support
-- [ ] Stage 2: Real-time voice input
-  - [ ] Microphone capture
-  - [ ] Live visualization
-  - [ ] Audio streaming
+- [x] Stage 2: Real-time voice input
+  - [x] Microphone capture with PyAudio
+  - [x] Live visualization with all three modes
+  - [x] Audio level monitoring (Peak & RMS)
+  - [x] VU meters with color coding
+  - [x] Device selection and configuration
+  - [x] Real-time audio streaming
 - [ ] Stage 3: AI Assistant
   - [ ] Speech-to-text integration
   - [ ] Claude AI API integration
@@ -213,14 +280,32 @@ This project is open source and available under the MIT License.
 
 ## 🐛 Troubleshooting
 
-### "Audio file not found"
+### Stage 1 Issues
+
+#### "Audio file not found"
 Make sure the file path is correct and the file exists.
 
-### "Unsupported audio format"
+#### "Unsupported audio format"
 Check that your file is in WAV, FLAC, OGG, or MP3 format.
 
-### Docker volume issues
+#### Docker volume issues
 Ensure your audio files are in the `samples/` directory when using Docker.
+
+### Stage 2 Issues
+
+#### "No audio input devices found"
+- **Linux**: Make sure ALSA is installed and your microphone is connected
+- **macOS**: Grant microphone permissions in System Preferences → Security & Privacy
+- **Docker**: Ensure you're using `--device /dev/snd:/dev/snd` flag or the docker-compose configuration
+
+#### PyAudio installation errors
+- **Linux**: Install `portaudio19-dev` first: `sudo apt-get install portaudio19-dev`
+- **macOS**: Install PortAudio: `brew install portaudio`
+- **Windows**: Use pre-built PyAudio wheels
+
+#### "Permission denied" accessing microphone
+- Check that your user has permissions to access audio devices
+- On Linux, add your user to the `audio` group: `sudo usermod -a -G audio $USER`
 
 ## 📞 Contact & Support
 
@@ -228,5 +313,5 @@ For issues, questions, or contributions, please open an issue on the repository.
 
 ---
 
-**Current Version**: 0.1.0 (Stage 1)
+**Current Version**: 0.2.0 (Stage 2)
 **Status**: Active Development 🚀

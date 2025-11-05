@@ -8,7 +8,12 @@ services:
     volumes:
       # Mount your audio files directory
       - ./samples:/audio
+    # For Stage 2: Enable audio device access (Linux)
+    devices:
+      - /dev/snd:/dev/snd  # Audio devices
     # Override the default command to visualize a specific file
-    # Example: docker-compose run lofi-agent /audio/sample.wav --mode waveform
+    # Examples:
+    #   docker-compose run --rm lofi-agent /audio/sample.wav --mode waveform
+    #   docker-compose run --rm lofi-agent --live  # Live microphone (Stage 2)
     stdin_open: true
     tty: true
