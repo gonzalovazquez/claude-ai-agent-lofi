@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Audio samples (can be large)
+samples/*.wav
+samples/*.mp3
+samples/*.flac
+samples/*.ogg
+
+# Keep sample directory but not large files
+!samples/.gitkeep
+
+# Environment variables
+.env
+.env.local
+
+# Docker
+*.log

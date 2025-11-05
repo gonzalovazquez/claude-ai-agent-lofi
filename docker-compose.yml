@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  lofi-agent:
+    build: .
+    image: claude-ai-agent-lofi:latest
+    container_name: lofi-agent
+    volumes:
+      # Mount your audio files directory
+      - ./samples:/audio
+    # Override the default command to visualize a specific file
+    # Example: docker-compose run lofi-agent /audio/sample.wav --mode waveform
+    stdin_open: true
+    tty: true
