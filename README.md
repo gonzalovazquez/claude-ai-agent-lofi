@@ -307,6 +307,11 @@ Ensure your audio files are in the `samples/` directory when using Docker.
 - Check that your user has permissions to access audio devices
 - On Linux, add your user to the `audio` group: `sudo usermod -a -G audio $USER`
 
+### Stage 3 Issue
+
+### No pyaudio could not import _portaudio
+- Conduct steps as outlined https://stackoverflow.com/questions/36681836/pyaudio-could-not-import-portaudio.
+
 ## 📞 Contact & Support
 
 For issues, questions, or contributions, please open an issue on the repository.
