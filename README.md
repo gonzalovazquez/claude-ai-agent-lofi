@@ -10,7 +10,7 @@ Visualize audio files in your terminal with multiple visualization modes:
 - **Spectrum Analyzer**: Frequency spectrum visualization
 - **Oscilloscope View**: Detailed waveform with grid overlay
 
-### ✅ Stage 2: Real-Time Voice Visualization (Current)
+### ✅ Stage 2: Real-Time Voice Visualization
 - Capture audio from microphone in real-time
 - Live voice wave visualization as you speak
 - Interactive audio level monitoring with VU meters
@@ -18,11 +18,14 @@ Visualize audio files in your terminal with multiple visualization modes:
 - Device selection and configuration
 - Peak and RMS level indicators with color coding
 
-### 🚧 Stage 3: AI Personal Assistant (Planned)
-- Speech-to-text using OpenAI Whisper
-- Integration with Claude AI API
-- Conversational AI assistant interface
-- Voice commands and responses
+### ✅ Stage 3: AI Personal Assistant (Current)
+- Speech-to-text using OpenAI Whisper (local processing)
+- Integration with Claude AI API for intelligent responses
+- Conversational AI assistant with context memory
+- Multiple personality modes (helpful, concise, friendly, professional, lofi)
+- Real-time voice visualization during recording
+- Voice command recognition (goodbye, clear history, etc.)
+- Customizable recording duration and Whisper model selection
 
 ## 🚀 Quick Start
 
@@ -73,6 +76,29 @@ Visualize audio files in your terminal with multiple visualization modes:
 
    # Use specific audio device
    python main.py --live --device 1
+   ```
+
+6. **Try voice assistant mode (Stage 3)**
+   ```bash
+   # First, set up your Claude API key
+   # Option 1: Create a .env file
+   cp .env.example .env
+   # Edit .env and add your API key: ANTHROPIC_API_KEY=your_key_here
+
+   # Option 2: Set environment variable
+   export ANTHROPIC_API_KEY=your_key_here
+
+   # Start the voice assistant
+   python main.py --assistant
+
+   # With different personality
+   python main.py --assistant --personality friendly
+
+   # With faster/smaller Whisper model
+   python main.py --assistant --whisper-model tiny
+
+   # With longer recording duration (10 seconds)
+   python main.py --assistant --duration 10
    ```
 
 ### Docker Usage
@@ -161,6 +187,42 @@ python main.py --live --refresh-rate 0.1  # Slower refresh
 python main.py --live --refresh-rate 0.02  # Faster refresh
 ```
 
+### Stage 3: Voice Assistant
+
+#### Basic Voice Assistant
+```bash
+python main.py --assistant
+```
+
+#### With Different Personalities
+```bash
+python main.py --assistant --personality helpful    # Detailed and informative
+python main.py --assistant --personality concise    # Brief responses
+python main.py --assistant --personality friendly   # Warm and casual
+python main.py --assistant --personality professional  # Formal and structured
+python main.py --assistant --personality lofi       # Chill and relaxed (default)
+```
+
+#### With Different Whisper Models
+```bash
+python main.py --assistant --whisper-model tiny     # Fastest, less accurate
+python main.py --assistant --whisper-model base     # Balanced (default)
+python main.py --assistant --whisper-model small    # Better accuracy
+python main.py --assistant --whisper-model medium   # High accuracy
+python main.py --assistant --whisper-model large    # Best accuracy, slowest
+```
+
+#### With Custom Recording Duration
+```bash
+python main.py --assistant --duration 3   # 3 second recordings
+python main.py --assistant --duration 10  # 10 second recordings
+```
+
+#### Combined Options
+```bash
+python main.py --assistant --personality friendly --whisper-model tiny --duration 7
+```
+
 ### Help
 ```bash
 python main.py --help
@@ -185,13 +247,14 @@ claude-ai-agent-lofi/
 │   ├── __init__.py           # Package initialization
 │   ├── visualizer.py         # Audio visualization logic
 │   ├── audio_input.py        # Audio file and mic input handling
-│   ├── speech_to_text.py     # Stage 3: STT (planned)
-│   └── assistant.py          # Stage 3: Claude AI (planned)
+│   ├── speech_to_text.py     # Speech-to-text with Whisper
+│   └── assistant.py          # Claude AI assistant integration
 ├── main.py                   # Main entry point
 ├── generate_sample.py        # Generate test audio files
 ├── requirements.txt          # Python dependencies
 ├── Dockerfile               # Docker container definition
 ├── docker-compose.yml       # Docker Compose configuration
+├── .env.example            # Example environment variables
 ├── .dockerignore           # Docker ignore file
 ├── .gitignore              # Git ignore file
 └── README.md               # This file
@@ -206,20 +269,31 @@ claude-ai-agent-lofi/
 
 ## 📋 Requirements
 
-### Stages 1 & 2 (Current)
+### Python Packages (All Stages)
 - numpy>=1.24.0
 - soundfile>=0.12.0
 - rich>=13.7.0
-- pyaudio>=0.2.13
+- pyaudio>=0.2.13 (Stage 2 & 3)
+- openai-whisper>=20231117 (Stage 3)
+- anthropic>=0.18.0 (Stage 3)
+- python-dotenv>=1.0.0 (Stage 3)
 
-### System Dependencies (for Stage 2)
-- portaudio19-dev (Linux)
-- PortAudio (macOS: `brew install portaudio`)
-- PyAudio wheels (Windows)
+### System Dependencies
+- **For Stage 2 & 3** (Audio input):
+  - Linux: `portaudio19-dev` (`sudo apt-get install portaudio19-dev`)
+  - macOS: PortAudio (`brew install portaudio`)
+  - Windows: PyAudio wheels (usually pre-built)
 
-### Stage 3 (Planned)
-- openai-whisper>=20231117
-- anthropic>=0.18.0
+- **For Stage 3** (Speech-to-text):
+  - FFmpeg (required by Whisper)
+  - Linux: `sudo apt-get install ffmpeg`
+  - macOS: `brew install ffmpeg`
+  - Windows: Download from ffmpeg.org
+
+### API Keys (Stage 3)
+- Anthropic API key for Claude AI
+- Get it from: https://console.anthropic.com/
+- Set as `ANTHROPIC_API_KEY` environment variable or in `.env` file
 
 ## 🛠️ Development
 
@@ -236,6 +310,9 @@ python main.py samples/sample_tone.wav --mode oscilloscope
 # Test Stage 2: Live microphone
 python main.py --list-devices  # List available devices
 python main.py --live  # Start live visualization
+
+# Test Stage 3: Voice assistant (requires API key in .env)
+python main.py --assistant --whisper-model tiny  # Quick test with fastest model
 ```
 
 ### Contributing
@@ -255,11 +332,15 @@ Contributions are welcome! This project is in active development.
   - [x] VU meters with color coding
   - [x] Device selection and configuration
   - [x] Real-time audio streaming
-- [ ] Stage 3: AI Assistant
-  - [ ] Speech-to-text integration
-  - [ ] Claude AI API integration
-  - [ ] Conversational interface
-  - [ ] Voice command system
+- [x] Stage 3: AI Assistant
+  - [x] Speech-to-text with OpenAI Whisper (local)
+  - [x] Claude AI API integration
+  - [x] Conversational interface with history
+  - [x] Multiple personality modes
+  - [x] Voice command recognition
+  - [x] Live visualization during recording
+  - [x] Configurable Whisper models
+  - [x] Customizable recording duration
 
 ## 📝 License
 
@@ -269,7 +350,8 @@ This project is open source and available under the MIT License.
 
 - Built with Python and Rich for beautiful terminal output
 - Audio processing powered by NumPy and libsndfile
-- Future AI capabilities powered by Anthropic's Claude
+- Speech recognition powered by OpenAI Whisper
+- AI capabilities powered by Anthropic's Claude
 
 ## 💡 Tips
 
@@ -307,10 +389,43 @@ Ensure your audio files are in the `samples/` directory when using Docker.
 - Check that your user has permissions to access audio devices
 - On Linux, add your user to the `audio` group: `sudo usermod -a -G audio $USER`
 
-### Stage 3 Issue
+#### PyAudio "could not import _portaudio"
+- See troubleshooting steps at: https://stackoverflow.com/questions/36681836/pyaudio-could-not-import-portaudio
+- Ensure PortAudio is properly installed before installing PyAudio
 
-### No pyaudio could not import _portaudio
-- Conduct steps as outlined https://stackoverflow.com/questions/36681836/pyaudio-could-not-import-portaudio.
+### Stage 3 Issues
+
+#### "ANTHROPIC_API_KEY not found"
+- Create a `.env` file in the project directory
+- Add: `ANTHROPIC_API_KEY=your_key_here`
+- Get your API key from: https://console.anthropic.com/
+
+#### Whisper model download issues
+- Whisper models are downloaded automatically on first use
+- Models are cached in `~/.cache/whisper/`
+- Ensure you have internet connection and sufficient disk space
+- Model sizes: tiny (~75MB), base (~150MB), small (~500MB), medium (~1.5GB), large (~3GB)
+
+#### "FFmpeg not found" error
+- **Linux**: `sudo apt-get install ffmpeg`
+- **macOS**: `brew install ffmpeg`
+- **Windows**: Download from https://ffmpeg.org/ and add to PATH
+
+#### Slow transcription
+- Use a smaller Whisper model: `--whisper-model tiny` or `--whisper-model base`
+- Faster models are less accurate but work well for clear speech
+
+#### Claude API errors
+- Check your API key is correct
+- Verify you have API credits available
+- Check your internet connection
+- See https://console.anthropic.com/ for API status
+
+#### "No speech detected"
+- Speak louder and closer to the microphone
+- Check microphone levels in system settings
+- Try increasing `--duration` for longer recording time
+- Ensure there's minimal background noise
 
 ## 📞 Contact & Support
 
@@ -318,5 +433,7 @@ For issues, questions, or contributions, please open an issue on the repository.
 
 ---
 
-**Current Version**: 0.2.0 (Stage 2)
-**Status**: Active Development 🚀
+**Current Version**: 0.3.0 (Stage 3) ✨
+**Status**: All Stages Complete! 🎉
+
+Ready to use as a voice-controlled AI assistant!

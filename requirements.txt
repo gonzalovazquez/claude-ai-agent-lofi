@@ -6,6 +6,7 @@ rich>=13.7.0
 # Stage 2: Microphone input
 pyaudio>=0.2.13
 
-# Stage 3: Speech-to-text and AI (to be used later)
-# openai-whisper>=20231117
-# anthropic>=0.18.0
+# Stage 3: Speech-to-text and AI
+openai-whisper>=20231117
+anthropic>=0.18.0
+python-dotenv>=1.0.0

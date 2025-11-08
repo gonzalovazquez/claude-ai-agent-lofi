@@ -1,14 +1,15 @@
-# Stages 1 & 2: Sound file visualizer + Live microphone visualization
+# All Stages: Sound file visualizer + Live microphone + Voice Assistant
 FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies for audio processing
+# Install system dependencies for audio processing and Whisper
 RUN apt-get update && apt-get install -y \
     libsndfile1 \
     portaudio19-dev \
     alsa-utils \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
