@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  lofi-agent:
+    build: .
+    image: claude-ai-agent-lofi:latest
+    container_name: lofi-agent
+    volumes:
+      # Mount your audio files directory
+      - ./samples:/audio
+    # For Stage 2: Enable audio device access (Linux)
+    devices:
+      - /dev/snd:/dev/snd  # Audio devices
+    # Override the default command to visualize a specific file
+    # Examples:
+    #   docker-compose run --rm lofi-agent /audio/sample.wav --mode waveform
+    #   docker-compose run --rm lofi-agent --live  # Live microphone (Stage 2)
+    stdin_open: true
+    tty: true
